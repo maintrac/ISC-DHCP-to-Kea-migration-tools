@@ -27,9 +27,18 @@ def main():
     keaConf = json.load(f)
 
   subnets = {}
-  for sharedNet in keaConf['Dhcp4']['shared-networks']:
-    for subnet in sharedNet['subnet4']:
+
+  if 'Dhcp4' not in keaConf:
+    print("Can not find Dhcp4 part of Kea configuration file")
+    sys.exit()
+
+  if 'subnet4' in keaConf['Dhcp4']:
+    for subnet in keaConf['Dhcp4']['subnet4']:
      subnets[ipaddress.ip_network(subnet['subnet'])] = subnet['id']
+  if 'shared-networks' in keaConf['Dhcp4']:
+    for sharedNet in keaConf['Dhcp4']['shared-networks']:
+      for subnet in sharedNet['subnet4']:
+         subnets[ipaddress.ip_network(subnet['subnet'])] = subnet['id']
 
   regex = r"lease ([\d\.]+) \{((?!starts ).)*starts [\d]+ ([\d\/\ :]+)((?!ends ).)*ends [\d]+ ([\d\/\ :]+)((?!ethernet).)*ethernet ([0-9a-f:]+)[^\}]+\}"
 
@@ -39,7 +48,6 @@ def main():
   f.write("address,hwaddr,client_id,valid_lifetime,expire,subnet_id,fqdn_fwd,fqdn_rev,hostname,state,user_context\n")
 
   for matchNum, match in enumerate(matches, start=1):
-    match.group(groupNum)))
     ipAddress = match.group(1)
     macAddress = match.group(7)
     starttime = datetime.datetime.strptime(match.group(3), "%Y/%m/%d %H:%M:%S")
